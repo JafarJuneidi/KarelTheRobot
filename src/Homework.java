@@ -2,7 +2,7 @@ import stanford.karel.SuperKarel;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedHashSet;
 
 public class Homework extends SuperKarel {
     int length;
@@ -33,20 +33,17 @@ public class Homework extends SuperKarel {
         super.move();
         currentLocation.x += directions[currentDirectionIndex][0];
         currentLocation.y += directions[currentDirectionIndex][1];
-//        System.out.println("x: " + currentLocation.x + ", y: " + currentLocation.y);
     }
 
     public void turnLeft() {
         super.turnLeft();
         currentDirectionIndex = (currentDirectionIndex + 1) % 4;
     }
-
     public void turnRight() {
         super.turnRight();
         // used a floorMod so that index -1 circles back to 3, regular Mod doesn't have that behavior with negatives
         currentDirectionIndex = Math.floorMod((currentDirectionIndex - 1), 4);
     }
-
     private Pair LocationOfNextMove() {
         int x = currentLocation.x + directions[currentDirectionIndex][0];
         int y = currentLocation.y + directions[currentDirectionIndex][1];
@@ -58,7 +55,6 @@ public class Homework extends SuperKarel {
         int xDiffAfterMove = point.x - LocationOfNextMove().x;
         return Math.abs(xDiffAfterMove) < Math.abs(xDiff);
     }
-
     private boolean isNextMoveHorizontalDifferenceLess(Pair point) {
         int yDiff = point.y - currentLocation.y;
         int yDiffAfterMove = point.y - LocationOfNextMove().y;
@@ -81,47 +77,79 @@ public class Homework extends SuperKarel {
             move();
         }
     }
-    private ArrayList<Pair> calculateGoalPoints() {
-        HashSet<Pair> set = new HashSet<Pair>();
-        ArrayList<Pair> list = new ArrayList<Pair>();
+    private LinkedHashSet<Pair> calculateGoalPoints() {
+        LinkedHashSet<Pair> set = new LinkedHashSet<Pair>();
 
+        boolean inorder = true;
         for (int row = height; row > 0; --row) {
-            Pair p = new Pair(row, (length / 2) + 1);
-            if (set.contains(p)) continue;
-            set.add(p);
-            list.add(p);
+            Pair p1 = new Pair(row, (length / 2) + 1);
+            Pair p2 = null;
             if (Helper.isEven(length)) {
-                p = new Pair(row, length / 2);
-                if (set.contains(p)) break;
-                list.add(p);
-                set.add(p);
+                p2 = new Pair(row, length / 2);
             }
+
+            if (p2 == null) {
+               set.add(p1);
+            } else if (inorder) {
+                set.add(p1);
+                set.add(p2);
+            } else {
+                set.add(p2);
+                set.add(p1);
+            }
+            inorder = !inorder;
         }
 
         for (int col = length; col > 0; --col) {
-            Pair p = new Pair((height / 2) + 1, col);
-            if (set.contains(p)) continue;
-            set.add(p);
-            list.add(p);
+            Pair p1 = new Pair((height / 2) + 1, col);
+            Pair p2 = null;
             if (Helper.isEven(height)) {
-                p = new Pair(height / 2, col);
-                if (set.contains(p)) break;
-                list.add(p);
-                set.add(p);
+                p2 = new Pair(height / 2, col);
             }
+
+            if (p2 == null) {
+                set.add(p1);
+            } else if (inorder) {
+                set.add(p1);
+                set.add(p2);
+            } else {
+                set.add(p2);
+                set.add(p1);
+            }
+            inorder = !inorder;
         }
 
-//        for (int col = 1; col < length - 1; ++col) {
-//            set.add(new Pair(height - 2, col));
-//            set.add(new Pair(1, col));
-//        }
-//
-//        for (int row = 1; row < height - 1; ++row) {
-//            set.add(new Pair(row, length - 2));
-//            set.add(new Pair(row, 1));
-//        }
+        int squareLength;
+        if (height < length) {
+            squareLength = height - 2 - 1;
+        } else {
+            squareLength = length - 2 - 1;
+        }
+        int leftBorderCol = ((length + 1) / 2) - squareLength / 2;
+        int rightBorderCol = (length / 2) + 1 + squareLength / 2;
+        int bottomBorderRow = ((height + 1) / 2) - squareLength / 2;
+        int topBorderRow = (height / 2) + 1 + squareLength / 2;
 
-        return list;
+        for (int col = leftBorderCol; col <= rightBorderCol; ++col) {
+            Pair p = new Pair(bottomBorderRow, col);
+            set.add(p);
+        }
+
+        for (int row = bottomBorderRow; row <= topBorderRow; ++row) {
+            Pair p = new Pair(row, rightBorderCol);
+            set.add(p);
+        }
+
+        for (int col = rightBorderCol; col >= leftBorderCol; --col) {
+            Pair p = new Pair(topBorderRow, col);
+            set.add(p);
+        }
+
+        for (int row = topBorderRow; row >= bottomBorderRow; --row) {
+            Pair p = new Pair(row, leftBorderCol);
+            set.add(p);
+        }
+        return set;
     }
     /* You fill the code here */
     public void run() {
@@ -129,16 +157,11 @@ public class Homework extends SuperKarel {
         length = currentLocation.y;
         height = currentLocation.x;
 
-        if (length < 5 || height < 5) {
-            return;
-        }
+        if (length < 5 || height < 5) return;
 
-
-        ArrayList<Pair> list = calculateGoalPoints();
+        LinkedHashSet<Pair> list = calculateGoalPoints();
         setBeepersInBag(list.size());
-        System.out.println(list.size());
         for (Pair p: list) {
-            System.out.println("x: " + p.x + ", y: " + p.y);
             moveToPoint(p);
             putBeeper();
         }
