@@ -1,5 +1,9 @@
 import stanford.karel.SuperKarel;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 
 public class Homework extends SuperKarel {
     int length;
@@ -37,7 +41,7 @@ public class Homework extends SuperKarel {
             move();
         }
     }
-    public void moveToPointNew(Pair point, boolean addPointWhileMoving) {
+    public void moveToPoint(Pair point, boolean addPointWhileMoving) {
         while (!currentLocation.equals(point)) {
             int distance = currentLocation.distanceBetweenPairs(point);
             Pair nextMoveLocation = currentLocation.getPairAfterMove(direction.getDirection());
@@ -61,7 +65,7 @@ public class Homework extends SuperKarel {
             if (addPointWhileMoving && !beepersPresent()) putBeeper();
         }
     }
-    private LinkedHashSet<Pair> calculateGoalPoints() {
+    private ArrayList<Pair> calculateCrossPoints() {
         LinkedHashSet<Pair> set = new LinkedHashSet<Pair>();
 
         for (int row = height; row > 0; --row) {
@@ -88,6 +92,11 @@ public class Homework extends SuperKarel {
             set.add(p);
         }
 
+        return new ArrayList<Pair>(set);
+    }
+    public ArrayList<Pair> calculateSquarePoints() {
+        ArrayList<Pair> list = new ArrayList<Pair>();
+
         int squareLength;
         if (height < length) {
             squareLength = height - 3;
@@ -103,12 +112,14 @@ public class Homework extends SuperKarel {
         Pair topRight = new Pair(topBorderRow, rightBorderCol);
         Pair bottomRight = new Pair(bottomBorderRow, rightBorderCol);
         Pair bottomLeft = new Pair(bottomBorderRow, leftBorderCol);
-        set.add(topRight);
-        set.add(bottomRight);
-        set.add(bottomLeft);
-        set.add(topLeft);
+        list.add(topRight);
+        list.add(bottomRight);
+        list.add(bottomLeft);
+        list.add(topLeft);
+        // because I need to circle back to this point
+        list.add(topRight);
 
-        return set;
+        return list;
     }
     /* You fill the code here */
     public void run() {
@@ -119,27 +130,18 @@ public class Homework extends SuperKarel {
 
         if (length < 5 || height < 5) return;
 
-        LinkedHashSet<Pair> list = calculateGoalPoints();
         setBeepersInBag(10000);
-        int size = list.size();
-        Pair firstSquareCorner = null;
-        for (Pair p: list) {
-            // saves the first corner, so I can circle back to it
-            if (size == 4) {
-                firstSquareCorner = p;
-            }
-
-            if (size < 4) {
-                // moving while adding
-                // doing this for the last corner points
-                moveToPointNew(p, true);
-            } else {
-                moveToPointNew(p, false);
-                putBeeper();
-            }
-            size--;
+        ArrayList<Pair> crossPoints = calculateCrossPoints();
+        for (Pair p: crossPoints) {
+            moveToPoint(p, false);
+            putBeeper();
         }
-        moveToPointNew(firstSquareCorner, true);
+
+        ArrayList<Pair> squarePoints = calculateSquarePoints();
+        moveToPoint(squarePoints.get(0), false);
+        for (int i = 1; i < squarePoints.size(); ++i) {
+            moveToPoint(squarePoints.get(i), true);
+        }
         System.out.println("Number of moves: " + numberOfMoves);
     }
 }
