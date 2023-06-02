@@ -7,15 +7,39 @@ import java.util.LinkedHashSet;
 public class Homework extends SuperKarel {
     int length;
     int height;
-    Pair currentLocation = new Pair(1, 1);
+    Pair currentLocation;
+    MutableDirection direction;
     int[][] directions = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
     // Right, Up, Left, Bottom
-    int currentDirectionIndex = 0;
-    private void moveToUpperRight() {
-        while (!facingEast()) {
-            turnLeft();
-        }
+    int currentDirectionIndex;
+    int numberOfMoves;
+    public Homework() {
+        currentLocation = new Pair(1, 1);
+        direction = new MutableDirection(Direction.RIGHT);
+        currentDirectionIndex = 0;
+        numberOfMoves = 0;
+    }
+    public void move() {
+        if (frontIsBlocked()) return;
 
+        super.move();
+        currentLocation.updatePairBasedOnDirection(direction.getDirection());
+//        currentLocation.x += directions[currentDirectionIndex][0];
+//        currentLocation.y += directions[currentDirectionIndex][1];
+        numberOfMoves++;
+    }
+    public void turnLeft() {
+        super.turnLeft();
+        direction.turnLeft();
+//        currentDirectionIndex = (currentDirectionIndex + 1) % 4;
+    }
+    public void turnRight() {
+        super.turnRight();
+        // used a floorMod so that index -1 circles back to 3, regular Mod doesn't have that behavior with negatives
+        direction.turnRight();
+//        currentDirectionIndex = Math.floorMod((currentDirectionIndex - 1), 4);
+    }
+    private void moveToUpperRight() {
         while(frontIsClear()) {
             move();
         }
@@ -25,57 +49,65 @@ public class Homework extends SuperKarel {
             move();
         }
     }
-
-    // Overridden methods
-    public void move() {
-        if (frontIsBlocked()) return;
-
-        super.move();
-        currentLocation.x += directions[currentDirectionIndex][0];
-        currentLocation.y += directions[currentDirectionIndex][1];
-    }
-
-    public void turnLeft() {
-        super.turnLeft();
-        currentDirectionIndex = (currentDirectionIndex + 1) % 4;
-    }
-    public void turnRight() {
-        super.turnRight();
-        // used a floorMod so that index -1 circles back to 3, regular Mod doesn't have that behavior with negatives
-        currentDirectionIndex = Math.floorMod((currentDirectionIndex - 1), 4);
-    }
-    private Pair LocationOfNextMove() {
-        int x = currentLocation.x + directions[currentDirectionIndex][0];
-        int y = currentLocation.y + directions[currentDirectionIndex][1];
-
-        return new Pair(x, y);
-    }
-    private boolean isNextMoveVerticalDifferenceLess(Pair point) {
-        int xDiff = point.x - currentLocation.x;
-        int xDiffAfterMove = point.x - LocationOfNextMove().x;
-        return Math.abs(xDiffAfterMove) < Math.abs(xDiff);
-    }
-    private boolean isNextMoveHorizontalDifferenceLess(Pair point) {
-        int yDiff = point.y - currentLocation.y;
-        int yDiffAfterMove = point.y - LocationOfNextMove().y;
-        return Math.abs(yDiffAfterMove) < Math.abs(yDiff);
+//    private Pair getLocationOfNextMove() {
+//        int x = currentLocation.x + directions[currentDirectionIndex][0];
+//        int y = currentLocation.y + directions[currentDirectionIndex][1];
+//
+//        return new Pair(x, y);
+//    }
+//    private boolean isNextMoveVerticalDifferenceLess(Pair point) {
+//        int xDiff = point.x - currentLocation.x;
+//        int xDiffAfterMove = point.x - getLocationOfNextMove().x;
+//        return Math.abs(xDiffAfterMove) < Math.abs(xDiff);
+//    }
+//    private boolean isNextMoveHorizontalDifferenceLess(Pair point) {
+//        int yDiff = point.y - currentLocation.y;
+//        int yDiffAfterMove = point.y - getLocationOfNextMove().y;
+//        return Math.abs(yDiffAfterMove) < Math.abs(yDiff);
+//    }
+    public void moveToPointNew(Pair point) {
+        while (!currentLocation.equals(point)) {
+            int distance = currentLocation.distanceBetweenPairs(point);
+            Pair nextMoveLocation = currentLocation.getPairAfterMove(direction.getDirection());
+            if (nextMoveLocation.distanceBetweenPairs(point) < distance) {
+                move();
+            } else {
+                Direction directionToTheLeft = direction.getDirectionToTheLeft();
+                Direction directionToTheRight = direction.getDirectionToTheRight();
+//                int turnLeftDirectionIndex = (currentDirectionIndex + 1) % 4;
+//                int turnRightDirectionIndex = Math.floorMod((currentDirectionIndex - 1), 4);
+//                Pair leftTurnMoveLocation = new Pair(currentLocation.x + directions[turnLeftDirectionIndex][0], currentLocation.y + directions[turnLeftDirectionIndex][1]);
+//                Pair rightTurnMoveLocation = new Pair(currentLocation.x + directions[turnRightDirectionIndex][0], currentLocation.y + directions[turnRightDirectionIndex][1]);
+                Pair leftTurnMoveLocation = currentLocation.getPairAfterMove(directionToTheLeft);
+                Pair rightTurnMoveLocation = currentLocation.getPairAfterMove(directionToTheRight);
+                if (leftTurnMoveLocation.distanceBetweenPairs(point) < distance) {
+                    turnLeft();
+                } else if (rightTurnMoveLocation.distanceBetweenPairs(point) < distance) {
+                    turnRight();
+                } else {
+                    turnLeft();
+                    turnLeft();
+                }
+                move();
+            }
+        }
     }
     public void moveToPoint(Pair point) {
-        while (!isNextMoveHorizontalDifferenceLess(point) && currentLocation.y != point.y) {
-            turnLeft();
-        }
-
-        while (currentLocation.y != point.y) {
-            move();
-        }
-
-        while (!isNextMoveVerticalDifferenceLess(point) && currentLocation.x != point.x) {
-            turnLeft();
-        }
-
-        while (currentLocation.x != point.x) {
-            move();
-        }
+//        while (!isNextMoveHorizontalDifferenceLess(point) && currentLocation.y != point.y) {
+//            turnLeft();
+//        }
+//
+//        while (currentLocation.y != point.y) {
+//            move();
+//        }
+//
+//        while (!isNextMoveVerticalDifferenceLess(point) && currentLocation.x != point.x) {
+//            turnLeft();
+//        }
+//
+//        while (currentLocation.x != point.x) {
+//            move();
+//        }
     }
     private LinkedHashSet<Pair> calculateGoalPoints() {
         LinkedHashSet<Pair> set = new LinkedHashSet<Pair>();
@@ -110,11 +142,11 @@ public class Homework extends SuperKarel {
             if (p2 == null) {
                 set.add(p1);
             } else if (inorder) {
-                set.add(p1);
                 set.add(p2);
+                set.add(p1);
             } else {
-                set.add(p2);
                 set.add(p1);
+                set.add(p2);
             }
             inorder = !inorder;
         }
@@ -162,8 +194,9 @@ public class Homework extends SuperKarel {
         LinkedHashSet<Pair> list = calculateGoalPoints();
         setBeepersInBag(list.size());
         for (Pair p: list) {
-            moveToPoint(p);
+            moveToPointNew(p);
             putBeeper();
         }
+        System.out.println("Number of moves: " + numberOfMoves);
     }
 }
