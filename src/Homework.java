@@ -1,7 +1,4 @@
 import stanford.karel.SuperKarel;
-
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 public class Homework extends SuperKarel {
@@ -9,14 +6,10 @@ public class Homework extends SuperKarel {
     int height;
     Pair currentLocation;
     MutableDirection direction;
-    int[][] directions = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
-    // Right, Up, Left, Bottom
-    int currentDirectionIndex;
     int numberOfMoves;
-    public Homework() {
+    public void init() {
         currentLocation = new Pair(1, 1);
         direction = new MutableDirection(Direction.RIGHT);
-        currentDirectionIndex = 0;
         numberOfMoves = 0;
     }
     public void move() {
@@ -24,20 +17,15 @@ public class Homework extends SuperKarel {
 
         super.move();
         currentLocation.updatePairBasedOnDirection(direction.getDirection());
-//        currentLocation.x += directions[currentDirectionIndex][0];
-//        currentLocation.y += directions[currentDirectionIndex][1];
         numberOfMoves++;
     }
     public void turnLeft() {
         super.turnLeft();
         direction.turnLeft();
-//        currentDirectionIndex = (currentDirectionIndex + 1) % 4;
     }
     public void turnRight() {
         super.turnRight();
-        // used a floorMod so that index -1 circles back to 3, regular Mod doesn't have that behavior with negatives
         direction.turnRight();
-//        currentDirectionIndex = Math.floorMod((currentDirectionIndex - 1), 4);
     }
     private void moveToUpperRight() {
         while(frontIsClear()) {
@@ -49,37 +37,17 @@ public class Homework extends SuperKarel {
             move();
         }
     }
-//    private Pair getLocationOfNextMove() {
-//        int x = currentLocation.x + directions[currentDirectionIndex][0];
-//        int y = currentLocation.y + directions[currentDirectionIndex][1];
-//
-//        return new Pair(x, y);
-//    }
-//    private boolean isNextMoveVerticalDifferenceLess(Pair point) {
-//        int xDiff = point.x - currentLocation.x;
-//        int xDiffAfterMove = point.x - getLocationOfNextMove().x;
-//        return Math.abs(xDiffAfterMove) < Math.abs(xDiff);
-//    }
-//    private boolean isNextMoveHorizontalDifferenceLess(Pair point) {
-//        int yDiff = point.y - currentLocation.y;
-//        int yDiffAfterMove = point.y - getLocationOfNextMove().y;
-//        return Math.abs(yDiffAfterMove) < Math.abs(yDiff);
-//    }
-    public void moveToPointNew(Pair point) {
+    public void moveToPointNew(Pair point, boolean addPointWhileMoving) {
         while (!currentLocation.equals(point)) {
             int distance = currentLocation.distanceBetweenPairs(point);
             Pair nextMoveLocation = currentLocation.getPairAfterMove(direction.getDirection());
-            if (nextMoveLocation.distanceBetweenPairs(point) < distance) {
-                move();
-            } else {
+            if (nextMoveLocation.distanceBetweenPairs(point) >= distance) {
                 Direction directionToTheLeft = direction.getDirectionToTheLeft();
                 Direction directionToTheRight = direction.getDirectionToTheRight();
-//                int turnLeftDirectionIndex = (currentDirectionIndex + 1) % 4;
-//                int turnRightDirectionIndex = Math.floorMod((currentDirectionIndex - 1), 4);
-//                Pair leftTurnMoveLocation = new Pair(currentLocation.x + directions[turnLeftDirectionIndex][0], currentLocation.y + directions[turnLeftDirectionIndex][1]);
-//                Pair rightTurnMoveLocation = new Pair(currentLocation.x + directions[turnRightDirectionIndex][0], currentLocation.y + directions[turnRightDirectionIndex][1]);
+
                 Pair leftTurnMoveLocation = currentLocation.getPairAfterMove(directionToTheLeft);
                 Pair rightTurnMoveLocation = currentLocation.getPairAfterMove(directionToTheRight);
+
                 if (leftTurnMoveLocation.distanceBetweenPairs(point) < distance) {
                     turnLeft();
                 } else if (rightTurnMoveLocation.distanceBetweenPairs(point) < distance) {
@@ -88,103 +56,63 @@ public class Homework extends SuperKarel {
                     turnLeft();
                     turnLeft();
                 }
-                move();
             }
+            move();
+            if (addPointWhileMoving && !beepersPresent()) putBeeper();
         }
-    }
-    public void moveToPoint(Pair point) {
-//        while (!isNextMoveHorizontalDifferenceLess(point) && currentLocation.y != point.y) {
-//            turnLeft();
-//        }
-//
-//        while (currentLocation.y != point.y) {
-//            move();
-//        }
-//
-//        while (!isNextMoveVerticalDifferenceLess(point) && currentLocation.x != point.x) {
-//            turnLeft();
-//        }
-//
-//        while (currentLocation.x != point.x) {
-//            move();
-//        }
     }
     private LinkedHashSet<Pair> calculateGoalPoints() {
         LinkedHashSet<Pair> set = new LinkedHashSet<Pair>();
 
-        boolean inorder = true;
         for (int row = height; row > 0; --row) {
-            Pair p1 = new Pair(row, (length / 2) + 1);
-            Pair p2 = null;
-            if (Helper.isEven(length)) {
-                p2 = new Pair(row, length / 2);
-            }
-
-            if (p2 == null) {
-               set.add(p1);
-            } else if (inorder) {
-                set.add(p1);
-                set.add(p2);
-            } else {
-                set.add(p2);
-                set.add(p1);
-            }
-            inorder = !inorder;
+            Pair p = new Pair(row, (length + 1) / 2);
+            set.add(p);
         }
 
-        for (int col = length; col > 0; --col) {
-            Pair p1 = new Pair((height / 2) + 1, col);
-            Pair p2 = null;
-            if (Helper.isEven(height)) {
-                p2 = new Pair(height / 2, col);
+        if (Helper.isEven(length)) {
+            for (int row = 1; row <= height; ++row) {
+                Pair p = new Pair(row, (length / 2) + 1);
+                set.add(p);
             }
+        }
 
-            if (p2 == null) {
-                set.add(p1);
-            } else if (inorder) {
-                set.add(p2);
-                set.add(p1);
-            } else {
-                set.add(p1);
-                set.add(p2);
+        if (Helper.isEven(height)) {
+            for (int col = length; col > 0; --col) {
+                Pair p = new Pair((height + 1) / 2, col);
+                set.add(p);
             }
-            inorder = !inorder;
+        }
+
+        for (int col = 1; col <= length; ++col) {
+            Pair p = new Pair((height / 2) + 1, col);
+            set.add(p);
         }
 
         int squareLength;
         if (height < length) {
-            squareLength = height - 2 - 1;
+            squareLength = height - 3;
         } else {
-            squareLength = length - 2 - 1;
+            squareLength = length - 3;
         }
         int leftBorderCol = ((length + 1) / 2) - squareLength / 2;
         int rightBorderCol = (length / 2) + 1 + squareLength / 2;
         int bottomBorderRow = ((height + 1) / 2) - squareLength / 2;
         int topBorderRow = (height / 2) + 1 + squareLength / 2;
 
-        for (int col = leftBorderCol; col <= rightBorderCol; ++col) {
-            Pair p = new Pair(bottomBorderRow, col);
-            set.add(p);
-        }
+        Pair topLeft = new Pair(topBorderRow, leftBorderCol);
+        Pair topRight = new Pair(topBorderRow, rightBorderCol);
+        Pair bottomRight = new Pair(bottomBorderRow, rightBorderCol);
+        Pair bottomLeft = new Pair(bottomBorderRow, leftBorderCol);
+        set.add(topRight);
+        set.add(bottomRight);
+        set.add(bottomLeft);
+        set.add(topLeft);
 
-        for (int row = bottomBorderRow; row <= topBorderRow; ++row) {
-            Pair p = new Pair(row, rightBorderCol);
-            set.add(p);
-        }
-
-        for (int col = rightBorderCol; col >= leftBorderCol; --col) {
-            Pair p = new Pair(topBorderRow, col);
-            set.add(p);
-        }
-
-        for (int row = topBorderRow; row >= bottomBorderRow; --row) {
-            Pair p = new Pair(row, leftBorderCol);
-            set.add(p);
-        }
         return set;
     }
     /* You fill the code here */
     public void run() {
+        init();
         moveToUpperRight();
         length = currentLocation.y;
         height = currentLocation.x;
@@ -192,11 +120,26 @@ public class Homework extends SuperKarel {
         if (length < 5 || height < 5) return;
 
         LinkedHashSet<Pair> list = calculateGoalPoints();
-        setBeepersInBag(list.size());
+        setBeepersInBag(10000);
+        int size = list.size();
+        Pair firstSquareCorner = null;
         for (Pair p: list) {
-            moveToPointNew(p);
-            putBeeper();
+            // saves the first corner, so I can circle back to it
+            if (size == 4) {
+                firstSquareCorner = p;
+            }
+
+            if (size < 4) {
+                // moving while adding
+                // doing this for the last corner points
+                moveToPointNew(p, true);
+            } else {
+                moveToPointNew(p, false);
+                putBeeper();
+            }
+            size--;
         }
+        moveToPointNew(firstSquareCorner, true);
         System.out.println("Number of moves: " + numberOfMoves);
     }
 }
